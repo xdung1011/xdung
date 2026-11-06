@@ -1,0 +1,10 @@
+{
+  "name": "locket-gold-xdung",
+  "version": "1.0.0",
+  "description": "Locket Gold VIP Activation System",
+  "scripts": {
+    "start": "node api/lookup-user.js"
+  },
+  "type": "module",
+  "dependencies": {}
+}

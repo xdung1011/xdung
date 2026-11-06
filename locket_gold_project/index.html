@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Locket Gold by xdung</title>
+  <style>
+    /* CSS cơ bản cho giao diện mượt mà */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #000 url('https://www.transparenttextures.com/patterns/stardust.png');
+      color: #fff;
+      text-align: center;
+      padding: 20px;
+    }
+    .container {
+      max-width: 400px;
+      margin: 0 auto;
+      background: rgba(25, 25, 25, 0.8);
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+    .rainbow-text {
+      background-image: linear-gradient(to left, violet, indigo, blue, green, yellow, orange, red);
+      -webkit-background-clip: text;
+      color: transparent;
+      font-weight: bold;
+    }
+    input {
+      width: 90%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: 1px solid #444;
+      background: #222;
+      color: #fff;
+    }
+    button {
+      background: linear-gradient(90deg, #ff8a00, #e52e71);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      width: 100%;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+    .qr-container {
+      background: #fff;
+      color: #000;
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2 class="rainbow-text">Kích hoạt Locket Gold VIP</h2>
+    
+    <!-- Bước 1: Nhập Username -->
+    <div id="lookup-section">
+      <p>Nhập username Locket của bạn để bắt đầu</p>
+      <input type="text" id="username" placeholder="Ví dụ: nguyenvan_a">
+      <button onclick="verifyLocketAccount()">Tiếp Tục</button>
+    </div>
+
+    <!-- Bước 2: Hiển thị thanh toán (Ẩn mặc định) -->
+    <div id="payment-section" style="display: none;">
+      <div style="margin-top:10px;">
+        <img id="avatar-display" src="" alt="Avatar" width="80" style="border-radius: 50%;">
+        <h3 id="name-display" style="margin: 10px 0;"></h3>
+      </div>
+      
+      <div class="qr-container">
+        <h4>Quét mã VietQR để thanh toán</h4>
+        <p>Số tiền: <strong>50,000 VNĐ</strong></p>
+        <img id="dynamic-qr-img" src="" alt="Mã QR Thanh Toán" width="250">
+        <p>Nội dung CK: <strong id="transfer-syntax" style="color: red; font-size: 1.2em;"></strong></p>
+        <p style="font-size: 0.9em; color: #555;">Hệ thống tự động kích hoạt sau khi nhận tiền.</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const BANK_ID = "MB"; 
+    const ACCOUNT_NO = "0962572207"; 
+    const ACCOUNT_NAME = "LE XUAN DUNG"; 
+    const AMOUNT = 50000; 
+
+    async function verifyLocketAccount() {
+      const usernameInput = document.getElementById('username').value.trim();
+      if (!usernameInput) return alert("Vui lòng nhập username!");
+
+      const btn = document.querySelector('button');
+      btn.innerText = "Đang kiểm tra...";
+      btn.disabled = true;
+
+      try {
+        const response = await fetch(`/api/lookup-user?username=${usernameInput}`);
+        const data = await response.json();
+        
+        if (data.success) {
+          document.getElementById('avatar-display').src = data.avatar_url;
+          document.getElementById('name-display').innerText = data.display_name;
+          
+          const transferContent = `LOCKET ${data.username}`;
+          document.getElementById('transfer-syntax').innerText = transferContent;
+          
+          const qrUrl = `https://img.vietqr.io/image/${BANK_ID}-${ACCOUNT_NO}-compact2.png?amount=${AMOUNT}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(ACCOUNT_NAME)}`;
+          document.getElementById('dynamic-qr-img').src = qrUrl;
+          
+          document.getElementById('lookup-section').style.display = 'none';
+          document.getElementById('payment-section').style.display = 'block';
+
+          startPaymentPolling(data.username);
+        } else {
+          alert("Không tìm thấy tài khoản Locket này!");
+          btn.innerText = "Tiếp Tục";
+          btn.disabled = false;
+        }
+      } catch (err) {
+        alert("Lỗi máy chủ, vui lòng thử lại sau.");
+        btn.innerText = "Tiếp Tục";
+        btn.disabled = false;
+      }
+    }
+
+    function startPaymentPolling(username) {
+      const pollInterval = setInterval(async () => {
+        try {
+          const checkRes = await fetch(`/api/check-payment?username=${username}`);
+          const checkData = await checkRes.json();
+
+          if (checkData.status === "PAID") {
+            clearInterval(pollInterval);
+            alert(`Thanh toán thành công! Bấm OK để cài đặt Locket Gold.`);
+            window.location.href = checkData.download_url;
+          }
+        } catch (e) {
+          // Silent catch for polling
+        }
+      }, 5000); 
+    }
+  </script>
+</body>
+</html>
